@@ -7,7 +7,11 @@
 
 import SwiftUI
 
-fileprivate let weekDaySymbols = Calendar.current.shortWeekdaySymbols
+fileprivate let weekDaySymbols: [String] = {
+    var symbols = Calendar.current.shortWeekdaySymbols
+    let firstWeekday = Calendar.current.firstWeekday - 1
+    return [String](symbols[firstWeekday...] + symbols[0..<firstWeekday])
+}()
 
 struct Sidebar: View {
     @State private var toMemosList = true
@@ -68,6 +72,13 @@ struct Sidebar: View {
                 ForEach(memosViewModel.tags) { tag in
                     NavLink(route: .tag(tag)) {
                         Label(tag.name, systemImage: "number")
+                    }
+                }.onDelete { indexSet in
+                    let toDeleteTags = indexSet.map { memosViewModel.tags[$0].name }
+                    Task {
+                        for tag in toDeleteTags {
+                            try await memosViewModel.deleteTag(name: tag)
+                        }
                     }
                 }
             } header: {

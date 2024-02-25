@@ -18,12 +18,14 @@ private let urlSessionConfiguration = {
 
 class Memos {
     let host: URL
+    let accessToken: String?
     let openId: String?
     let session: URLSession
     private(set) var status: MemosServerStatus? = nil
     
-    private init(host: URL, openId: String?) {
+    private init(host: URL, accessToken: String?, openId: String?) {
         self.host = host
+        self.accessToken = accessToken?.isEmpty ?? true ? nil : accessToken
         self.openId = (openId?.isEmpty ?? true) ? nil : openId
         session = URLSession(configuration: urlSessionConfiguration)
         
@@ -33,8 +35,8 @@ class Memos {
         }
     }
     
-    static func create(host: URL, openId: String?) async throws -> Memos {
-        let memos = Memos(host: host, openId: openId)
+    static func create(host: URL, accessToken: String?, openId: String?) async throws -> Memos {
+        let memos = Memos(host: host, accessToken: accessToken, openId: openId)
         try await memos.loadStatus()
         return memos
     }
@@ -117,9 +119,18 @@ class Memos {
         return try await MemosListAllMemo.request(self, data: data, param: ())
     }
     
+    func deleteTag(name: String) async throws -> MemosDeleteTag.Output {
+        return try await MemosDeleteTag.request(self, data: MemosDeleteTag.Input(name: name), param: ())
+    }
+    
     func url(for resource: Resource) -> URL {
-        if let externalLink = resource.externalLink?.encodeUrlPath(), let url = URL(string: externalLink) {
-            return url
+        if let externalLink = resource.externalLink {
+            if let url = URL(string: externalLink) {
+                return url
+            // Only re-encode url path when the url is invalid, temporary fix for filename is not encoded when URL prefix is used
+            } else if let url = URL(string: externalLink.encodeUrlPath()) {
+                return url
+            }
         }
         
         var url = host.appendingPathComponent(resource.path())
@@ -153,7 +164,12 @@ class Memos {
             }
         } catch {}
         
-        let (tmpURL, response) = try await session.download(for: URLRequest(url: url))
+        var request = URLRequest(url: url)
+        if let accessToken = accessToken, !accessToken.isEmpty && url.host == host.host {
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let (tmpURL, response) = try await session.download(for: request)
         guard let response = response as? HTTPURLResponse else {
             throw MemosError.unknown
         }
@@ -166,7 +182,7 @@ class Memos {
     }
 }
 
-extension String {
+fileprivate extension String {
     // encode url path
     func encodeUrlPath() -> String {
         guard self.hasPrefix("http") else { return self}
