@@ -5,10 +5,12 @@
 //  Created by Mudkip on 2022/12/1.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import Social
 import SwiftUI
 import KeychainSwift
+import Models
+import Account
 import UniformTypeIdentifiers
 import Markdown
 
@@ -63,12 +65,8 @@ class ShareViewController: SLComposeServiceViewController {
     }
 
     private func handleShare() async throws {
-        let memos = try await getMemos()
-        do {
-            try await memos.loadStatus()
-        } catch {
-            print(error)
-        }
+        let accountManager = AccountManager()
+        guard let memos = accountManager.currentService else { throw MoeMemosError.notLogin }
         var resourceList = [Resource]()
         var contentTextList = [String]()
         contentTextList.append(contentText)
@@ -82,46 +80,27 @@ class ShareViewController: SLComposeServiceViewController {
                         let data = try Data(contentsOf: url)
                         image = UIImage(data: data)
                     }
-                    guard let image = image else { throw MemosError.invalidParams }
-                    guard let data = image.jpegData(compressionQuality: 0.8) else { throw MemosError.invalidParams }
-                    let response = try await memos.uploadResource(imageData: data, filename: "\(UUID().uuidString).jpg", contentType: "image/jpeg")
+                    guard let image = image else { throw MoeMemosError.invalidParams }
+                    guard let data = image.jpegData(compressionQuality: 0.8) else { throw MoeMemosError.invalidParams }
+                    let response = try await memos.createResource(filename: "\(UUID().uuidString).jpg", data: data, type: "image/jpeg", memoRemoteId: nil)
                     resourceList.append(response)
                 }
                 
-                if attachment.canLoadObject(ofClass: NSURL.self),
-                   let url = try await attachment.loadObject(ofClass: NSURL.self),
-                   let address = url.absoluteString {
-                    contentTextList.append(address)
+                
+                if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                    if let url = try await attachment.loadItem(forTypeIdentifier: UTType.url.identifier) as? URL {
+                        contentTextList.append(url.absoluteString)
+                    }
                 }
             }
         }
         
         let content = contentTextList.joined(separator: "\n").trimmingCharacters(in: .whitespaces)
         if content.isEmpty && resourceList.isEmpty {
-            throw MemosError.invalidParams
+            throw MoeMemosError.invalidParams
         }
-        
         let tags = extractCustomTags(from: content)
-        for name in tags {
-            _ = try await memos.upsertTag(name: name)
-        }
-        _ = try await memos.createMemo(data: MemosCreate.Input(content: content, visibility: nil, resourceIdList: resourceList.map { $0.id }))
-    }
-    
-    private func getMemos() async throws -> Memos {
-        guard let host = UserDefaults(suiteName: groupContainerIdentifier)?.string(forKey: memosHostKey) else {
-            throw MemosError.notLogin
-        }
-        guard let hostURL = URL(string: host) else {
-            throw MemosError.notLogin
-        }
-        
-        let keychain = KeychainSwift()
-        keychain.accessGroup = keychainAccessGroupName
-        let accessToken = keychain.get(memosAccessTokenKey)
-        
-        let openId = UserDefaults(suiteName: groupContainerIdentifier)?.string(forKey: memosOpenIdKey)
-        return try await Memos.create(host: hostURL, accessToken: accessToken, openId: openId)
+        _ = try await memos.createMemo(content: content, visibility: nil, resources: resourceList, tags: tags)
     }
     
     private func extractCustomTags(from markdownText: String) -> [String] {
@@ -131,3 +110,5 @@ class ShareViewController: SLComposeServiceViewController {
         return tagVisitor.tags
     }
 }
+
+extension NSItemProvider: @unchecked @retroactive Sendable {}

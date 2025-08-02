@@ -6,17 +6,38 @@
 //
 
 import SwiftUI
+import Account
+import Models
+import Factory
+import AppIntents
+import Env
 
 @main
 struct MoeMemosApp: App {
-    @StateObject private var userState: UserState = .shared
-    @StateObject private var memosManager: MemosManager = .shared
+    @Injected(\.appInfo) private var appInfo
+    @Injected(\.accountViewModel) private var userState
+    @Injected(\.accountManager) private var accountManager
+    @Injected(\.appPath) private var appPath
+    @State private var memosViewModel = MemosViewModel()
+
+    init() {
+        AppDependencyManager.shared.add(dependency: Container.shared.accountManager())
+        AppDependencyManager.shared.add(dependency: Container.shared.accountViewModel())
+        AppDependencyManager.shared.add(dependency: Container.shared.appPath())
+
+        AppShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(userState)
-                .environmentObject(memosManager)
+                .tint(.green)
+                .withEnvironments()
+                .onOpenURL { url in
+                    if url.host() == "new-memo" {
+                        appPath.presentedSheet = .newMemo
+                    }
+                }
         }
     }
 }

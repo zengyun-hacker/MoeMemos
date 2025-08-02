@@ -6,15 +6,13 @@
 //
 
 import SwiftUI
+import Models
+import Env
+import Account
+import Factory
 
-enum Route: Hashable {
-    case memos
-    case resources
-    case archived
-    case tag(Tag)
-    case settings
-    case explore
-    
+@MainActor
+extension Route {
     @ViewBuilder
     func destination() -> some View {
         switch self {
@@ -30,6 +28,35 @@ enum Route: Hashable {
             Settings()
         case .explore:
             Explore()
+        case .memosAccount(let accountKey):
+            MemosAccountView(accountKey: accountKey)
         }
+    }
+}
+
+@MainActor
+extension View {
+    func withSheetDestinations(sheetDestinations: Binding<SheetDestination?>) -> some View {
+        sheet(item: sheetDestinations) { destination in
+            switch destination {
+            case .newMemo:
+                MemoInput(memo: nil)
+                    .withEnvironments()
+            case .editMemo(let memo):
+                MemoInput(memo: memo)
+                    .withEnvironments()
+            case .addAccount:
+                AddAccountView()
+                    .withEnvironments()
+            }
+        }
+    }
+    
+    func withEnvironments() -> some View {
+        environment(Container.shared.accountViewModel())
+            .environment(Container.shared.accountManager())
+            .environment(Container.shared.appInfo())
+            .environment(Container.shared.appPath())
+            .environment(Container.shared.memosViewModel())
     }
 }

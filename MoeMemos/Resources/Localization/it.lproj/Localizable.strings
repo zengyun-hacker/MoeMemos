@@ -41,14 +41,10 @@
  
 "login.open-id.hint" = "Copia “Open ID” dall'impostazioni in ✍️memos.";
 "login.host" = "Ospite";
-"login.method" = "Metodo di connessione";
 "login.open-id" = "Open ID";
 "login.access-token" = "Token di accesso";
 "login.access-token.hint" = "Crea un token di accesso dalle impostazioni ✍️memos.";
-"login.password" = "Password";
 "login.hint" = "Inserisci le informazioni di accesso al server\n[✍️memos](https://github.com/usememos/memos).";
-"login.username" = "Nome Utente";
-"login.username-and-password" = "Password";
 "login.sign-in" = "Login";
  
 "stats.day" = "Giorno";
@@ -67,3 +63,12 @@
 "share.memo-saved" = "Promemoria salvato.";
  
 "explore" = "Esplora";
+
+// Account
+"account.local-user" = "Local user";
+"account.add-account" = "Add Account";
+"account.accounts" = "Accounts";
+"account.add-memos-account" = "Add a Memos Account";
+"account.memos-account-description" = "Sync with Your Memos Server";
+"account.account-detail" = "Account Detail";
+"account.switch-account" = "Switch Account";

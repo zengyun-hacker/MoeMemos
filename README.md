@@ -1,6 +1,8 @@
 Moe Memos
 =========
 
+[![justforfunnoreally.dev badge](https://img.shields.io/badge/justforfunnoreally-dev-9ff)](https://justforfunnoreally.dev)
+
 <img alt="Moe Memos" src="https://memos.moe/memos.png" width="160" height="160" />
 
 **Moe Memos** is an app to help you capture thoughts and ideas.
@@ -27,9 +29,7 @@ Moe Memos is available on App Store for free. You can also build this app with X
 - Available on iPhone and iPad with multitasking support
 - Full privacy protection, no data collection
 
-## About
-
-Moe Memos is a third-party client for [✍️memos](https://github.com/usememos/memos) and both projects aren't affiliated with each other. Both projects are inspired by the memo-taking tool [flomo](https://flomoapp.com/). If you prefer an all-in-one alternative syncing with the cloud, it is recommended to try [flomo](https://flomoapp.com/).
+Moe Memos is a third-party client for [✍️memos](https://github.com/usememos/memos) and both projects aren't affiliated with each other.
 
 ## Development
 

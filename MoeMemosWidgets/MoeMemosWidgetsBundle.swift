@@ -13,5 +13,9 @@ struct MoeMemosWidgetsBundle: WidgetBundle {
     var body: some Widget {
         MemosGraphWidget()
         MemoryWidget()
+        if #available(iOS 18.0, *) {
+            QuickMemoWidget()
+        }
+        QuickMemoLockWidget()
     }
 }
